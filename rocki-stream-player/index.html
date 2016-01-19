@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Rocki Radio</title>
+		<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+		<link href='http://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" type="text/css" href="style.css">
+		<link rel="icon" sizes="32x32" type="image/png" href="favicon.png">
+		<link rel="icon" sizes="192x192" type="image/png" href="touch-icon.png" />
+		<link rel="apple-touch-icon" sizes="180x180" type="image/png" href="apple-touch-icon.png">
+	</head>
+
+	<body>
+
+		<div id="title">
+			<h1>Rocki Radio</h1>
+		</div>
+
+		<div id="controls">
+
+			<form action="" id="form">
+				<label for="ip">Your Rocki's IP</label>
+				<input type="text" id="ip" name="ip" size="15" value="192.168.144.14" />
+				<label for="stream">Stream URL</label>
+				<input type="text" id="stream" name="stream" size="50" value="http://stream.bobblogger.de/stream.m3u" />
+				<a href="#" class="button" id="play">Play</a>
+				<a href="#" class="button" id="stop">Stop</a>
+			</form>
+
+		</div>
+
+		<div class="block">
+			<h2 class="blocktitle">Presets</h2>
+			<div class="blockcontent">
+				<ul id="presets">
+					<li><a href="http://webradio.89.0rtl.de/livestream128.m3u" class="preset">89.0 RTL</a></li>
+					<li><a href="http://live96.106acht.de" class="preset">alster radio</a></li>
+					<li><a href="http://www.radio21.de/livestream/livestream.m3u" class="preset">Radio21</a></li>
+					<li><a href="http://stream.bobblogger.de/stream.m3u" class="preset">Radio BOB</a></li>
+					<li><a href="http://stream.sport1.fm/api/livestream-redirect/SPORT1FM_24_7.mp3" class="preset">Sport1.fm</a></li>
+					<li><a href="http://stream.sport1.fm/api/livestream-redirect/SPORT1FM_Einzel1.mp3" class="preset">Sport1.fm Livespiel 1</a></li>
+					<li><a href="http://stream.sport1.fm/api/livestream-redirect/SPORT1FM_Einzel2.mp3" class="preset">Sport1.fm Livespiel 2</a></li>
+					<li><a href="http://stream.sport1.fm/api/livestream-redirect/SPORT1FM_Einzel3.mp3" class="preset">Sport1.fm Livespiel 3</a></li>
+					<li><a href="http://stream.sport1.fm/api/livestream-redirect/SPORT1FM_Einzel4.mp3" class="preset">Sport1.fm Livespiel 4</a></li>
+					<li><a href="http://stream.sport1.fm/api/livestream-redirect/SPORT1FM_Einzel5.mp3" class="preset">Sport1.fm Livespiel 5</a></li>
+					<li><a href="http://stream.sport1.fm/api/livestream-redirect/SPORT1FM_Einzel6.mp3" class="preset">Sport1.fm Livespiel 6</a></li>
+					<li><a href="" class="preset"></a></li>
+					<li><a href="" class="preset"></a></li>
+				</ul>
+				<div class="clearer"></div>
+			</div>
+		</div>
+
+		<div class="block">
+			<h2 class="blocktitle">Help</h2>
+			<div class="blockcontent helpblock">
+				<p>This web page allows you to send a compatible audio stream to your <a href="http://www.myrocki.com/">Rocki</a> player.</p>
+				<ul>
+					<li>Connect to the same wifi network your Rocki is on.</li>
+					<li>Find the IP address of your Rocki. There are many ways to do this, I prefer the <a href="https://play.google.com/store/apps/details?id=com.overlook.android.fing">Fing</a> app on Android.</li>
+					<li>Find the stream URL you want to play. Some radio station websites display stream URLs, on others you may need to view the source of the page. Alternatively, use one of the preset buttons.</li>
+					<li>Enter both values in the form on this page, and press "Play".</li>
+					<li>Keep this browser window open while the stream is playing.</li>
+				</ul>
+				<p>Please make sure your Rocki has the latest firmware installed. Feel free to post any issues you encounter on <a href="https://github.com/roytanck/rocki-stream-player/issues">GitHub</a>.</p>
+			</div>
+		</div>
+
+		<div class="block logblock">
+			<h2 class="blocktitle">Log</h2>
+			<div class="blockcontent">
+				<p class="log"></p>
+			</div>
+		</div>
+
+		<div id="footer">&copy; <a href="http://www.roytanck.com">Roy Tanck</a> - <a href="http://www.myrocki.com/">Rocki rocks</a> - Requires firmware version 1.4+ on your Rocki - Having trouble? Please <a href="https://github.com/roytanck/rocki-stream-player/issues">post issues on GitHub</a>.</div>
+
+		<iframe id="iframe" src="" width="200" height="200" frameBorder="0"></iframe>
+
+		<script type="text/javascript">
+
+			$( document ).ready( function(){
+				
+				// restore previous vlaues from cookie
+				var settings = getCookie('rsp_cookie');
+				if( settings != null ){
+					var s = JSON.parse( settings );
+					$('input#ip').val( s.ip );
+					$('input#stream').val( s.stream );
+				}
+
+				// block folding
+				$('.blocktitle').click( function(){
+					$(this).parent().find('.blockcontent').slideToggle( 200, function(){
+						if( $(this).is(":visible") ){
+							$(this).parent().find('.blocktitle').addClass('openblock');
+						} else {
+							$(this).parent().find('.blocktitle').removeClass('openblock');
+						}
+					});
+				});
+			});
+
+			$( "#form" ).submit(function( event ) {
+				// assemble the API call to send to Rocki
+				ip = $('input#ip').val(); //document.forms["form"]["ip"].value;
+				stream = $('input#stream').val(); //document.forms["form"]["stream"].value;
+				//apiCall = 'http://' + ip + '/cgi-bin/rocki.cgi?Play=' + stream;
+				apiCall = 'http://' + ip + '/cgi-bin/rocki.cgi?Play=upnp&Host=127.0.0.1&Port=49153&URL=' + stream + '&Duration=99:59:59.999';
+				// send through AJAX
+				sendRequest( apiCall );
+				// write to log
+				rocki_log( 'API call sent: ' + ip + ' -&gt; ' + stream );
+				// seave settings to a cookie
+				setCookie( 'rsp_cookie', JSON.stringify( { 'ip' : ip, 'stream' : stream } ) );
+				// done
+				event.preventDefault();
+			});
+
+			$('#play').click(function( event ) {
+				// submit the form
+				$('#form').submit();
+				// done
+				event.preventDefault();
+			});
+
+
+			$('#stop').click(function( event ) {
+				// assemble the API call to send to Rocki
+				ip = $('input#ip').val(); //document.forms["form"]["ip"].value;
+				apiCall = 'http://' + ip + '/cgi-bin/rocki.cgi?Stop=true';
+				// send through AJAX
+				sendRequest( apiCall );
+				// write line to log
+				rocki_log( 'API call sent: ' + ip + ' -&gt; stop' );
+				// done
+				event.preventDefault();
+			});
+
+			$('.preset').click(function( event ) {
+				event.preventDefault();
+				$('#stream').val( $(this).attr('href') );
+			});
+
+			function rocki_log( str ){
+				d = new Date();
+				t = d.toLocaleString();
+				$( ".log" ).append( '[' + t + '] ' + str + '<br />' );
+			}
+
+			function sendRequest( url ){
+				// fallback
+				$("#iframe").attr( 'src', url );
+			}
+
+			function setCookie(key, value) {
+				var expires = new Date();
+				expires.setTime( expires.getTime() + ( 24 * 60 * 60 * 1000 ) );
+				document.cookie = key + '=' + value + ';expires=' + expires.toUTCString();
+			}
+
+			function getCookie(key) {
+				var keyValue = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)');
+				return keyValue ? keyValue[2] : null;
+			}
+
+		</script>
+
+	</body>
+
+</html>
